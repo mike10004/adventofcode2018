@@ -4,9 +4,10 @@ import sys
 import re
 import logging
 from collections import defaultdict
+import argparse
+
 
 _log = logging.getLogger(__name__)
-
 
 
 class Square(tuple):
@@ -47,12 +48,14 @@ class Claim(tuple):
         mine = set(self.squares())
         theirs = set(other.squares())
         common = mine & theirs
+        if not common:
+            return None
         min_col, min_row = min([sq.col for sq in common]), min([sq.row for sq in common])
         max_col, max_row = max([sq.col for sq in common]), max([sq.row for sq in common])
         width, height = max_row - min_row + 1, max_col - min_col + 1
+        assert width > 0 and height > 0
         return Claim(overlap_id, Square(min_col, min_row), width, height)
-        
-
+    
     @classmethod
     def parse(cls, token):
         """Parses a claim from a string like 
@@ -70,19 +73,41 @@ class Claim(tuple):
 
 
 def main():
-    logging.basicConfig(level=logging.DEBUG)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("part", choices=('1', '2'), help="part ('1' or '2')")
+    parser.add_argument("--log-level", choices=('DEBUG', 'INFO', 'WARN', 'ERROR'), default='INFO')
+    args = parser.parse_args()
+    logging.basicConfig(level=logging.__dict__[args.log_level])
     _log.debug("reading from standard input")
     claims = [Claim.parse(line) for line in sys.stdin]
-    counts = defaultdict(int)
-    for claim in claims:
-        squares = claim.squares()
-        for sq in squares:
-            counts[sq] += 1
-    num_multiclaimed_squares = 0
-    for sq, count in counts.items():
-        if count > 1:
-            num_multiclaimed_squares += 1
-    print("{} of {} squares are contained in multiple claims".format(num_multiclaimed_squares, len(counts)))
+    if args.part == '1':
+        counts = defaultdict(int)
+        for claim in claims:
+            squares = claim.squares()
+            for sq in squares:
+                counts[sq] += 1
+        num_multiclaimed_squares = 0
+        for sq, count in counts.items():
+            if count > 1:
+                num_multiclaimed_squares += 1
+        print("{} of {} squares are contained in multiple claims".format(num_multiclaimed_squares, len(counts)))
+    elif args.part == '2':
+        for i in range(len(claims)):
+            a = claims[i]
+            has_conflict = False
+            for j in range(len(claims)):
+                if i == j:
+                    continue
+                b = claims[j]
+                if a.intersection(b) is not None:
+                    _log.debug("{} of {}: {} intersects {}".format(i, len(claims), a, b))
+                    has_conflict = True
+                    break
+            if not has_conflict:
+                print("claim with no conflicts: {}".format(a))
+                break
+    else:
+        raise ValueError("invalid part")
     return 0
 
 if __name__ == '__main__':

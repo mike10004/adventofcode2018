@@ -31,4 +31,12 @@ class TestClaim(unittest.TestCase):
         expected = Claim(-1, Square(3, 3), 2, 2)
         actual = claim1.intersection(claim2, -1)
         self.assertEqual(expected, actual)
+        commutative = claim2.intersection(claim1, -1)
+        self.assertEqual(expected, commutative, "expect commutative")
+
+    def test_intersection_empty(self):
+        claim1 = Claim(1, Square(1, 3), 4, 4)
+        claim2 = Claim(2, Square(6, 10), 4, 4)
+        actual = claim1.intersection(claim2, -1)
+        self.assertIsNone(actual)
 
