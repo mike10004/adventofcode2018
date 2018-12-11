@@ -80,6 +80,9 @@ class Shift(tuple):
                 duration = wakes_up.since(falls_asleep)
                 total += duration
         return total
+    
+    def is_asleep_at_minute(self, minute):
+        return minute in self.list_minutes_asleep()
 
 
 class ShiftParser(object):
@@ -116,6 +119,21 @@ class ShiftParser(object):
         return shifts
 
 
+def print_minute_histo(histo):
+    for minute in sorted(histo.keys()):
+        count = histo[minute]
+        print("%02d %s" % (minute, count))
+
+
+def argmax(scriptable, keys):
+    mx = None
+    a = None
+    for key in keys:
+        curr = scriptable[key]
+        if mx is None or curr > mx:
+            mx = curr
+            a = key
+    return a, mx
 
 def compute_stuff():
     lines = [line for line in sys.stdin]
@@ -130,17 +148,32 @@ def compute_stuff():
         if sleep_counts[shift.guard_id] > most_minutes_slept:
             sleepiest_guard = shift.guard_id
             most_minutes_slept = sleep_counts[shift.guard_id]
-    # for guard_id, minutes_asleep in sleep_counts.items():
-    #     print("Guard #{} slept for {} minutes".format(guard_id, minutes_asleep))
     print("sleepest guard is {} ({} minutes)".format(sleepiest_guard, sleep_counts[sleepiest_guard]))
     histo = defaultdict(int)
     for shift in shifts_by_guard[sleepiest_guard]:
         minutes = shift.list_minutes_asleep()
         for minute in minutes:
             histo[minute] += 1
+    print_minute_histo(histo)
+    sleepage = defaultdict(list)
+    for minute in range(MINUTES_PER_HOUR):
+        for shift in shifts:
+            if shift.is_asleep_at_minute(minute):
+                sleepage[minute].append(shift.guard_id)
+    # histo is map of minute -> guard_count
+    # guard_count is map of guard_id -> number of shifts for guard was asleep at that minute
+    histo = {}  
+    for minute, guard_ids in sleepage.items():
+        guard_count = defaultdict(int)
+        for guard_id in guard_ids:
+            guard_count[guard_id] += 1
+        histo[minute] = guard_count
+    print()
+    print("minute / sleepiest / # sleeps")
     for minute in sorted(histo.keys()):
-        count = histo[minute]
-        print("%02d %d" % (minute, count))
+        guard_count = histo[minute]
+        sleepiest_at_minute, count = argmax(guard_count, guard_count.keys())
+        print("%02d guard %4s %d" % (minute, sleepiest_at_minute, count))
     return 0
 
 
