@@ -35,8 +35,7 @@ class Time(tuple):
     def since(self, then):
         """Calculates minutes between the argument Time and this time."""
         diff = [self[i] - then[i] for i in range(len(then))]
-        assert diff[0] == 0, "can't calculate minutes between Times spanning a year:"
-        assert not diff[1], "these times span a month: " + str([self, then])
+        assert diff[0] == 0 and diff[1] == 0, "can't calculate minutes across months or years: " + str([self, then])
         minutes = diff[2] * MINUTES_PER_DAY + diff[3] * MINUTES_PER_HOUR + diff[4]
         return minutes
 
