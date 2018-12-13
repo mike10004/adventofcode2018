@@ -51,19 +51,19 @@ int react(const char* input, char* output, int input_len, FILE* verbose)
         strncpy(output, input, input_len);
         return 0;
     }
-    fprintf(verbose, "copying [%d:%d]\n", 0, reaction_idx);
+    // fprintf(verbose, "copying [%d:%d]\n", 0, reaction_idx);
     for (i = 0; i < reaction_idx; i++) {
         output[opos] = input[i];
         opos++;
     }
-    fprintf(verbose, "copying [%d:%d]\n", reaction_idx + 2, input_len);
+    // fprintf(verbose, "copying [%d:%d]\n", reaction_idx + 2, input_len);
     for (i = reaction_idx + 2; i < input_len; i++) {
         output[opos] = input[i];
         opos++;
     }
     postilen = strnlen(input, INPUT_LEN_MAX);
     postolen = strnlen(output, INPUT_LEN_MAX);
-    fprintf(verbose, "opos = %d, input[%d], output[%d]\n", opos, postilen, postolen);
+    // fprintf(verbose, "opos = %d, input[%d], output[%d]\n", opos, postilen, postolen);
     if (postilen == postolen) {
         fprintf(stderr, "a reaction happened, but the output string length %d equals input string length\n", postilen);
         abort();
@@ -119,8 +119,8 @@ int main(int argc, char* argv[])
         do {
             nchars = strnlen(input, INPUT_LEN_MAX);
             nreactions = react(input, output, nchars, verbose);
-            fprintf(verbose, "%s -> %d reactions -> %s\n", input, nreactions, output);
-            memset(input, '\0', sizeof(input));
+            fprintf(verbose, "%s -> %s\n", input, output);
+            memset(input, '\0', INPUT_LEN_MAX);
             strncpy(input, output, nchars);
         } while (nreactions > 0);
         fprintf(stdout, "%s\n", output);
