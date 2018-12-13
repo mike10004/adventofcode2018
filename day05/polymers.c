@@ -30,7 +30,7 @@ int is_reactive(char a, char b)
     return is_same_type(a, b) && !is_same_polarity(a, b);
 }
 
-int react(const char* input, char* output, int input_len, FILE* verbose)
+int react(const char* input, char* output, int input_len)
 {
     int i;
     char a;
@@ -51,22 +51,13 @@ int react(const char* input, char* output, int input_len, FILE* verbose)
         strncpy(output, input, input_len);
         return 0;
     }
-    // fprintf(verbose, "copying [%d:%d]\n", 0, reaction_idx);
     for (i = 0; i < reaction_idx; i++) {
         output[opos] = input[i];
         opos++;
     }
-    // fprintf(verbose, "copying [%d:%d]\n", reaction_idx + 2, input_len);
     for (i = reaction_idx + 2; i < input_len; i++) {
         output[opos] = input[i];
         opos++;
-    }
-    postilen = strnlen(input, INPUT_LEN_MAX);
-    postolen = strnlen(output, INPUT_LEN_MAX);
-    // fprintf(verbose, "opos = %d, input[%d], output[%d]\n", opos, postilen, postolen);
-    if (postilen == postolen) {
-        fprintf(stderr, "a reaction happened, but the output string length %d equals input string length\n", postilen);
-        abort();
     }
     return 1;
 }
@@ -85,19 +76,6 @@ void rstrip(char* str, const int maxlen)
     }
 }
 
-FILE* open_verbose_output(const int argc, char* argv[])
-{
-    int i;
-    if (argc > 1) {
-        for (i = 1; i < argc; i++) {
-            if (strncmp(argv[i], "-v", 2) == 0) {
-                return stderr;
-            }
-        }
-    }
-    return fopen("/dev/null", "r");
-}
-
 int main(int argc, char* argv[])
 {
     char input[INPUT_LEN_MAX];
@@ -105,9 +83,7 @@ int main(int argc, char* argv[])
     int nchars;
     int nreactions;
     int retval;
-    FILE* verbose;
     FILE* input_file = stdin;
-    verbose = open_verbose_output(argc, argv);
     fgets(input, INPUT_LEN_MAX, input_file);
     rstrip(input, INPUT_LEN_MAX);
     nchars = strnlen(input, INPUT_LEN_MAX);
@@ -115,16 +91,15 @@ int main(int argc, char* argv[])
         fprintf(stderr, "failed to read input\n");
         retval = 1;
     } else {
-        fprintf(verbose, "read %d bytes from input\n", nchars);
+        fprintf(stderr, "%d chars in input\n", nchars);
         do {
             nchars = strnlen(input, INPUT_LEN_MAX);
-            nreactions = react(input, output, nchars, verbose);
-            fprintf(verbose, "%s -> %s\n", input, output);
+            nreactions = react(input, output, nchars);
             memset(input, '\0', INPUT_LEN_MAX);
             strncpy(input, output, nchars);
         } while (nreactions > 0);
         fprintf(stdout, "%s\n", output);
-        fclose(input_file);
+        fprintf(stderr, "%lu chars in output\n", strnlen(output, INPUT_LEN_MAX));
         retval = 0;
     } 
     return retval;
