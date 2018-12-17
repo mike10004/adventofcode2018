@@ -4,7 +4,6 @@ import sys
 import io
 import math
 import logging
-import pyhull.convex_hull
 from collections import defaultdict
 from operator import itemgetter
 
@@ -15,19 +14,6 @@ _log = logging.getLogger(__name__)
 
 def sq(x):
     return x * x
-
-
-def magnitude(p):
-    """Calculates the magnitude of a vector p."""
-    return math.sqrt(sq(p[0]) + sq(p[1]))
-
-
-def dot_product(p, q):
-    assert len(p) == len(q), "vectors are not congruent"
-    s = 0
-    for i in range(len(p)):
-        s += (p[i] * q[i])
-    return s
 
 
 class Point(tuple):
@@ -70,27 +56,6 @@ class Point(tuple):
         else:
             return Point(*point_or_tuple)
     
-
-class Edge(tuple):
-
-    u, v = None, None
-
-    def __new__(cls, u, v):
-        u = Point.wrap(u)
-        v = Point.wrap(v)
-        me = super(Edge, cls).__new__(cls, [u, v])
-        me.u = u
-        me.v = v
-        return me
-    
-    def angle(self, adjacent):
-        """Measures the angle between this edge and another that shares the same first endpoint."""
-        assert self.u == adjacent.u, "argument edge's point u must equal this edge's point u "
-        p = self.v.translate(self.u.scale(-1))
-        q = adjacent.v.translate(self.u.scale(-1))
-        cosa = dot_product(p, q) / (magnitude(p) * magnitude(q))
-        return math.acos(cosa)
-
 
 class Grid(object):
 
@@ -207,12 +172,6 @@ class Grid(object):
         self.render(buffer, labels)
         return buffer.getvalue()
     
-    def hull(self):
-        lines = pyhull.convex_hull.qconvex("p", self.points)
-        tokenized = [line.split() for line in lines[2:]]  # first line is dimension, second line is vertex count
-        h = [tuple(map(_ctype, pair)) for pair in tokenized]
-        return h
-
 
 def parse_coords(ifile, ctype=_ctype):
     """Parses a list of coordinate pairs."""

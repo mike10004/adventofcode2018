@@ -4,7 +4,7 @@ import sys
 import math
 import unittest
 import io
-from coords import Point, Edge, Grid, parse_coords
+from coords import Point, Grid, parse_coords
 
 class PointTest(unittest.TestCase):
 
@@ -23,17 +23,6 @@ class PointTest(unittest.TestCase):
         p = Point(3, 4)
         self.assertTrue(p is Point.wrap(p))
         self.assertTrue(isinstance(Point.wrap([0, 0]), Point))
-
-class EdgeTest(unittest.TestCase):
-
-    def test_angle(self):
-        u = Point(0, 0)
-        v = Point(1, 1)
-        w = Point(1, 0)
-        p = Edge(u, v)
-        q = Edge(u, w)
-        a = p.angle(q)
-        self.assertAlmostEqual(45.0, math.degrees(a))
 
 
 def sample_grid():
@@ -182,13 +171,6 @@ bBb....ccc
                 g = Grid.containing(points)
                 turf = g.find_turf(query)
                 self.assertEqual(expected, list(turf))
-    
-    def test_hull(self):
-        grid = sample_grid()
-        h = grid.hull()
-        expected = set([(1, 1), (1, 6), (8, 3), (8, 9)])
-        actual = set(h)
-        self.assertSetEqual(expected, actual)
     
     def test_border(self):
         grid = Grid.containing([(3, 3), (-1, -1), (-1, 3), (3, 1)])
