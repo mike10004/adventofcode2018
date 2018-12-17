@@ -3,12 +3,14 @@
 import sys
 import io
 import math
+import logging
 import pyhull.convex_hull
 from collections import defaultdict
 from operator import itemgetter
 
 
 _ctype = int  # type of a component of a coordinate pair
+_log = logging.getLogger(__name__)
 
 
 def sq(x):
@@ -211,16 +213,18 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-v", "--verbose", action="store_true", default=False)
     args = parser.parse_args()
+    logging.basicConfig(level=(logging.DEBUG if args.verbose else logging.INFO))
     coord_pairs = parse_coords(sys.stdin)
+    _log.debug("%s points in input", len(coord_pairs))
     grid = Grid.containing(coord_pairs)
     hull = grid.hull()
     non_hull_points = [p for p in grid.points if p not in hull]
+    _log.debug("%s points non-hull points", len(non_hull_points))
     max_area, max_owner = None, None
     for p in non_hull_points:
         turf = grid.find_turf(p)
         area = len(turf)
-        if args.verbose:
-            print("{} has turf with area {}".format(p, area), file=sys.stderr)
+        _log.debug("{} has turf with area {}".format(p, area))
         if max_area is None or area > max_area:
             max_area = area
             max_owner = p
