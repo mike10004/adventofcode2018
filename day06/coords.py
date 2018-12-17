@@ -202,19 +202,32 @@ def find_max_finite_area(grid):
     _log.debug("ignored %d points in search for max finite area", nignored)
     return max_owner, max_area
 
+
+def part1(grid, args):
+    max_owner, max_area = find_max_finite_area(grid)
+    assert max_owner is not None, "no max owner found; no finite areas?"
+    print("{} has turf with max area {}".format(max_owner, max_area))
+
+
+def part2(grid, args):
+    raise NotImplementedError()
+
         
 def main():
     import argparse
     parser = argparse.ArgumentParser()
+    parser.add_argument("part", type=int, choices=(1, 2))
     parser.add_argument("-v", "--verbose", action="store_true", default=False)
     args = parser.parse_args()
     logging.basicConfig(level=(logging.DEBUG if args.verbose else logging.INFO))
     coord_pairs = parse_coords(sys.stdin)
     _log.debug("%s points in input", len(coord_pairs))
     grid = Grid.containing(coord_pairs)
-    max_owner, max_area = find_max_finite_area(grid)
-    assert max_owner is not None, "no max owner found; no finite areas?"
-    print("{} has turf with max area {}".format(max_owner, max_area))
+    part = {
+        1: part1,
+        2: part2,
+    }[args.part]
+    part(grid, args)
     return 0
 
 
