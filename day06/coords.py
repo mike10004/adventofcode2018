@@ -123,11 +123,16 @@ class Grid(object):
     
     def border(self):
         min_x, min_y = self.corner
-        pts = []
-        for y in range(min_y, min_y + self.height):
-            for x in range(min_x, min_x + self.width):
-                pts.append((x, y))
-        return pts
+        max_x, max_y = min_x + self.width - 1, min_y + self.height - 1
+        x_range = list(range(min_x, max_x + 1))
+        y_range = list(range(min_y, max_y + 1))
+        pts = (
+            [(min_x, y) for y in y_range] +
+            [(x, min_y) for x in x_range] +
+            [(max_x, y) for y in y_range] + 
+            [(x, max_y) for x in x_range]
+        )
+        return sorted(set(pts))
     
     def cells(self):
         if self._cells is None:
@@ -217,18 +222,25 @@ def parse_coords(ifile, ctype=_ctype):
 
 
 def find_max_finite_area(grid):
-    hull = grid.hull()
-    non_hull_points = [p for p in grid.points if p not in hull]
-    _log.debug("%s points non-hull points", len(non_hull_points))
     max_area, max_owner = None, None
-    for p in non_hull_points:
+    border = grid.border()
+    nignored = 0
+    for p in grid.points:
         turf = grid.find_turf(p)
+        turf_on_border = False
+        for t in turf:
+            if t in border:
+                turf_on_border = True
+                break
+        if turf_on_border:
+            nignored += 1
+            continue
         area = len(turf)
         _log.debug("{} has turf with area {}".format(p, area))
         if max_area is None or area > max_area:
             max_area = area
             max_owner = p
-    assert max_owner is not None, "no max owner found; empty point list?"
+    _log.debug("ignored %d points in search for max finite area", nignored)
     return max_owner, max_area
 
         
@@ -242,6 +254,7 @@ def main():
     _log.debug("%s points in input", len(coord_pairs))
     grid = Grid.containing(coord_pairs)
     max_owner, max_area = find_max_finite_area(grid)
+    assert max_owner is not None, "no max owner found; no finite areas?"
     print("{} has turf with max area {}".format(max_owner, max_area))
     return 0
 
