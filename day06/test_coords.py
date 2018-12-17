@@ -189,4 +189,10 @@ bBb....ccc
         expected = set([(1, 1), (1, 6), (8, 3), (8, 9)])
         actual = set(h)
         self.assertSetEqual(expected, actual)
+    
+    def test_border(self):
+        grid = Grid.containing([(3, 3), (-1, -1), (-1, 3), (3, 1)])
+        expected = set([(-1, -1), (-1, 0), (-1, 1), (-1, 2), (-1, 3), (0, -1), (0, 0), (0, 1), (0, 2), (0, 3), (1, -1), (1, 0), (1, 1), (1, 2), (1, 3), (2, -1), (2, 0), (2, 1), (2, 2), (2, 3), (3, -1), (3, 0), (3, 1), (3, 2), (3, 3)])
+        b = grid.border()
+        self.assertSetEqual(expected, set(b))
         

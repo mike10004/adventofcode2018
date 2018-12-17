@@ -121,6 +121,14 @@ class Grid(object):
     def size(self):
         return self.width * self.height
     
+    def border(self):
+        min_x, min_y = self.corner
+        pts = []
+        for y in range(min_y, min_y + self.height):
+            for x in range(min_x, min_x + self.width):
+                pts.append((x, y))
+        return pts
+    
     def cells(self):
         if self._cells is None:
             cells = []
@@ -207,16 +215,8 @@ def parse_coords(ifile, ctype=_ctype):
     points = [Point(*pair) for pair in points]
     return points
 
-        
-def main():
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-v", "--verbose", action="store_true", default=False)
-    args = parser.parse_args()
-    logging.basicConfig(level=(logging.DEBUG if args.verbose else logging.INFO))
-    coord_pairs = parse_coords(sys.stdin)
-    _log.debug("%s points in input", len(coord_pairs))
-    grid = Grid.containing(coord_pairs)
+
+def find_max_finite_area(grid):
     hull = grid.hull()
     non_hull_points = [p for p in grid.points if p not in hull]
     _log.debug("%s points non-hull points", len(non_hull_points))
@@ -229,6 +229,19 @@ def main():
             max_area = area
             max_owner = p
     assert max_owner is not None, "no max owner found; empty point list?"
+    return max_owner, max_area
+
+        
+def main():
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-v", "--verbose", action="store_true", default=False)
+    args = parser.parse_args()
+    logging.basicConfig(level=(logging.DEBUG if args.verbose else logging.INFO))
+    coord_pairs = parse_coords(sys.stdin)
+    _log.debug("%s points in input", len(coord_pairs))
+    grid = Grid.containing(coord_pairs)
+    max_owner, max_area = find_max_finite_area(grid)
     print("{} has turf with max area {}".format(max_owner, max_area))
     return 0
 
