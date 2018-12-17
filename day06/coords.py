@@ -3,9 +3,12 @@
 import sys
 import io
 import math
-import pyhull
+import pyhull.convex_hull
 from collections import defaultdict
 from operator import itemgetter
+
+
+_ctype = int  # type of a component of a coordinate pair
 
 
 def sq(x):
@@ -188,11 +191,43 @@ class Grid(object):
         buffer = io.StringIO()
         self.render(buffer, labels)
         return buffer.getvalue()
+    
+    def hull(self):
+        lines = pyhull.convex_hull.qconvex("p", self.points)
+        tokenized = [line.split() for line in lines[2:]]  # first line is dimension, second line is vertex count
+        h = [tuple(map(_ctype, pair)) for pair in tokenized]
+        return h
 
+
+def parse_coords(ifile, ctype=_ctype):
+    """Parses a list of coordinate pairs."""
+    points = [tuple(map(ctype, pair.split(", "))) for pair in ifile if pair]
+    points = [Point(*pair) for pair in points]
+    return points
 
         
+def main():
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-v", "--verbose", action="store_true", default=False)
+    args = parser.parse_args()
+    coord_pairs = parse_coords(sys.stdin)
+    grid = Grid.containing(coord_pairs)
+    hull = grid.hull()
+    non_hull_points = [p for p in grid.points if p not in hull]
+    max_area, max_owner = None, None
+    for p in non_hull_points:
+        turf = grid.find_turf(p)
+        area = len(turf)
+        if args.verbose:
+            print("{} has turf with area {}".format(p, area), file=sys.stderr)
+        if max_area is None or area > max_area:
+            max_area = area
+            max_owner = p
+    assert max_owner is not None, "no max owner found; empty point list?"
+    print("{} has turf with max area {}".format(max_owner, max_area))
+    return 0
 
 
-
-    
-
+if __name__ == '__main__':
+    exit(main())

@@ -4,7 +4,7 @@ import sys
 import math
 import unittest
 import io
-from coords import Point, Edge, Grid
+from coords import Point, Edge, Grid, parse_coords
 
 class PointTest(unittest.TestCase):
 
@@ -37,33 +37,44 @@ class EdgeTest(unittest.TestCase):
 
 
 def sample_grid():
-        lines = """1, 1
+        text = """1, 1
 1, 6
 8, 3
 3, 4
 5, 5
-8, 9""".split("\n")
-        points = [line.split(", ") for line in lines]
-        points = [(int(x), int(y)) for (x, y) in points]
-        points = [Point(*pair) for pair in points]
+8, 9"""
+        points = parse_coords(io.StringIO(text))
         grid = Grid.containing(points, (0, 0), (9, 9))
         return grid
 
+
+class ParseTest(unittest.TestCase):
+
+    def test_parse_coords(self):
+        expected = [(1, 1), (1, 6), (8, 3), (3, 4), (5, 5), (8, 9)]
+        text ="""1, 1
+1, 6
+8, 3
+3, 4
+5, 5
+8, 9"""
+        actual = parse_coords(io.StringIO(text))
+        self.assertListEqual(expected, actual)
 
 class GridTest(unittest.TestCase):
 
     def test_find_owner(self):
         test_cases = [
-            (Grid.containing([(0, 0)]), (0, 0), (0, 0)),
-            (Grid.containing([(0, 0), (0, 1)]), (0, 0), (0, 0)),
-            (Grid.containing([(0, 0), (0, 1)]), (0, 1), (0, 1)),
-            (Grid.containing([(0, 0), (1, 1)]), (0, 0), (0, 0)),
-            (Grid.containing([(0, 0), (1, 1)]), (1, 1), (1, 1)),
-            (Grid.containing([(0, 0), (1, 1)]), (0, 1), None),
-            (Grid.containing([(0, 0), (1, 1)]), (1, 0), None),
-            (Grid.containing([(0, 0), (1, 0), (1, 3)]), (1, 0), (0, 0)),
-            (Grid.containing([(0, 0), (1, 0), (1, 3)]), (1, 1), (1, 0)),
-            (Grid.containing([(0, 0), (1, 0), (1, 3)]), (0, 3), (0, 0)),
+            # (Grid.containing([(0, 0)]), (0, 0), (0, 0)),
+            # (Grid.containing([(0, 0), (0, 1)]), (0, 0), (0, 0)),
+            # (Grid.containing([(0, 0), (0, 1)]), (0, 1), (0, 1)),
+            # (Grid.containing([(0, 0), (1, 1)]), (0, 0), (0, 0)),
+            # (Grid.containing([(0, 0), (1, 1)]), (1, 1), (1, 1)),
+            # (Grid.containing([(0, 0), (1, 1)]), (0, 1), None),
+            # (Grid.containing([(0, 0), (1, 1)]), (1, 0), None),
+            # (Grid.containing([(0, 0), (1, 0), (1, 3)]), (1, 0), (1, 0)),
+            # (Grid.containing([(0, 0), (1, 0), (1, 3)]), (1, 1), (1, 0)),
+            (Grid.containing([(0, 0), (1, 0), (1, 3)]), (0, 3), (1, 3)),
         ]
         for grid, query, expected in test_cases:
             with self.subTest():
@@ -157,12 +168,6 @@ bb.ddd.ccc
 bBb....ccc
 """
         actual = g.rendering()
-        print()
-        print()
-        print(expected)
-        print()
-        print(actual)
-
         self.assertEqual(expected.strip(), actual.strip())
     
     def test_find_turf_trivial(self):
@@ -177,3 +182,11 @@ bBb....ccc
                 g = Grid.containing(points)
                 turf = g.find_turf(query)
                 self.assertEqual(expected, list(turf))
+    
+    def test_hull(self):
+        grid = sample_grid()
+        h = grid.hull()
+        expected = set([(1, 1), (1, 6), (8, 3), (8, 9)])
+        actual = set(h)
+        self.assertSetEqual(expected, actual)
+        
