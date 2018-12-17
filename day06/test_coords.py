@@ -194,4 +194,14 @@ bBb....ccc
         ])
         b = grid.border()
         self.assertSetEqual(expected, set(b))
+    
+    def test_distance_sum(self):
+        g = Grid.containing([(0, 0)])
+        self.assertEqual(0, g.distance_sum((0, 0)))
+        g = sample_grid()
+        self.assertEqual(30, g.distance_sum((4, 3)))
+    
+    def test_region_size(self):
+        g = Grid.containing([(0, 0)])
+        self.assertEqual(1, g.region_size(1))
         

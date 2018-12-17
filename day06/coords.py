@@ -171,6 +171,23 @@ class Grid(object):
         buffer = io.StringIO()
         self.render(buffer, labels)
         return buffer.getvalue()
+
+    def distance_sum(self, p, dist_fn=Point.manhattan):
+        s = 0
+        for q in self.points:
+            s += dist_fn(q, p)
+        return s
+    
+    def region_size(self, max_dist, dist_fn=Point.manhattan):
+        region_size = 0
+        for y in range(self.corner.y, self.corner.y + self.height):
+            for x in range(self.corner.x, self.corner.x + self.width):
+                not_in_region = False
+                total_dist = self.distance_sum((x, y), dist_fn)
+                if total_dist < max_dist:
+                    region_size += 1
+        return region_size
+
     
 
 def parse_coords(ifile, ctype=_ctype):
@@ -210,7 +227,8 @@ def part1(grid, args):
 
 
 def part2(grid, args):
-    raise NotImplementedError()
+    region_size = grid.region_size(args.max_dist)
+    print("max region size with dist < {} is {}".format(args.max_dist, region_size))
 
         
 def main():
@@ -218,6 +236,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("part", type=int, choices=(1, 2))
     parser.add_argument("-v", "--verbose", action="store_true", default=False)
+    parser.add_argument("--max-dist", type=int, default=10000)
     args = parser.parse_args()
     logging.basicConfig(level=(logging.DEBUG if args.verbose else logging.INFO))
     coord_pairs = parse_coords(sys.stdin)
