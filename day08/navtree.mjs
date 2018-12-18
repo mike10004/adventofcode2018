@@ -31,6 +31,21 @@ export class Node {
     static findRoot(nodes) {
         return nodes.filter(n => !n.hasParent)[0];
     }
+
+    value() {
+        if (this.isLeaf()) {
+            return this.sumMetadatas(false);
+        } else {
+            const relevant = [];
+            this.metadatas.forEach(md => {
+                const child = this.children[md - 1];
+                if (child) {
+                    relevant.push(child);
+                }
+            });
+            return relevant.map(r => r.value()).reduce(SUM, 0);
+        }
+    }
 }
 
 export class Parser {

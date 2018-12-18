@@ -13,6 +13,8 @@ function main(args) {
     const root = Node.findRoot(nodes);
     const metadataSum = root.sumMetadatas(true);
     process.stdout.write("metadata sum " + metadataSum + "\n");
+    const rootValue = root.value();
+    process.stdout.write("root value " + rootValue + "\n");
     return 0;
 }
 
