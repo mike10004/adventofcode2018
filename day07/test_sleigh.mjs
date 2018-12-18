@@ -33,6 +33,6 @@ describe("Sequencer", () => {
     it("compute", () => {
         const steps = Step.parseAll(SAMPLE_TEXT);
         const sequence = new Sequencer().compute(steps);
-        assert.deepEqual(sequence, ['C', 'A', 'B', 'D', 'F', 'E']);
+        assert.deepEqual(sequence.join(''), 'CABDFE');
     });
 });
