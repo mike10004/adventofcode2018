@@ -81,10 +81,17 @@ export class Sequencer {
         return sequence;
     }
 
-    findDoable(steps, completed) {
+    /**
+     * 
+     * @param steps 
+     * @param completed 
+     * @param {function|undefined} filter predicate satisfied only by IDs of allowable steps
+     */
+    findDoable(steps, completed, filter) {
+        filter = filter || (x => true);
         const doable = [];
         for (let id in steps) {
-            if (!completed.has(id)) {
+            if (!completed.has(id) && filter(id)) {
                 const step = steps[id];
                 if (step.isDoable(completed)) {
                     doable.push(id);
@@ -95,6 +102,106 @@ export class Sequencer {
         return doable;
     }
 
+}
+
+export class Task {
+    
+    constructor(id, duration, startTime) {
+        this.id = id;
+        this.duration = duration;
+        this.startTime = startTime;
+    }
+
+    isCompleted(currentTime) {
+        return currentTime >= (this.startTime + this.duration);
+    }
+
+    static start(id, floor, currentTime) {
+        const duration = floor + " ABCDEFGHIJKLMNOPQRSTUVWXYZ".indexOf(id);
+        return new Task(id, duration, currentTime);
+    }
+}
+
+export class Worker {
+
+    constructor() {
+        this.task = null;
+    }
+
+    assign(task) {
+        this.task = task;
+    }
+
+    isIdle() {
+        return !this.task;
+    }
+
+    clear() {
+        this.task = null;
+    }
+
+    currentTaskId() {
+        return !!this.task ? this.task.id : ".";
+    }
+}
+
+export class Scheduler {
+
+    constructor(workers, floor) {
+        this.sequencer = new Sequencer();
+        this.second = -1;
+        this.floor = floor || 0;
+        this.workers = workers || ([new Worker()]);
+    }
+
+    /**
+     * 
+     * @param {Set} completed set of IDs of completed tasks
+     */
+    tick(steps, completed) {
+        this.second++;
+        const stepsInProgress = new Set();
+        this.workers.forEach(worker => {
+            if (!worker.isIdle()) {
+                if (worker.task.isCompleted(this.second)) {
+                    completed.add(worker.task.id);
+                    worker.clear();
+                } else {
+                    stepsInProgress.add(worker.task.id);
+                }
+            }
+        });
+        const idleWorkers = this.workers.filter(w => w.isIdle());
+        if (idleWorkers.length > 0) {
+            const notInProgress = id => !stepsInProgress.has(id);
+            const doable = this.sequencer.findDoable(steps, completed, notInProgress)
+            if (doable.length > 0) {
+                for (let i = 0; i < Math.min(doable.length, idleWorkers.length); i++) {
+                    const step = doable[i];
+                    const worker = idleWorkers[i];
+                    worker.assign(Task.start(step, this.floor, this.second));
+                }
+            }
+        }
+    }
+
+    proceed(steps, listener, maxTotalDuration) {
+        listener = listener || (() => {});
+        const completed = new Set();
+        const numSteps = Object.keys(steps).length;
+        while (completed.size < numSteps) {
+            this.tick(steps, completed);
+            listener(this, steps, completed);
+            if (maxTotalDuration && this.second > maxTotalDuration) {
+                console.warn("break early due to max duration hit", maxTotalDuration);
+                break;
+            }
+        }
+    }
+
+    state() {
+        return this.workers.map(w => w.currentTaskId());
+    }
 }
 
 export const sleigh = {
