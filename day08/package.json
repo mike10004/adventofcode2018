@@ -5,7 +5,7 @@
   "main": "index.mjs",
   "scripts": {
     "program": "node --experimental-modules index.mjs",
-    "test": "node --experimental-modules test_*.mjs"
+    "test": "node --experimental-modules test_navtree.mjs"
   },
   "repository": {
     "type": "git",

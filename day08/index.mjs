@@ -1,5 +1,5 @@
 import fs from 'fs';
-// import {Bar} from './foo';
+import {Node, Parser} from './navtree';
 
 function main(args) {
     const pathname = args[0];
@@ -8,7 +8,11 @@ function main(args) {
         return 1;
     }
     const text = fs.readFileSync(pathname, {encoding: 'utf8'});
-    // ...
+    const parser = Parser.fromText(text);
+    const nodes = parser.consumeAll();
+    const root = Node.findRoot(nodes);
+    const metadataSum = root.sumMetadatas(true);
+    process.stdout.write("metadata sum " + metadataSum + "\n");
     return 0;
 }
 

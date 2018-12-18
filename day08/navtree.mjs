@@ -12,12 +12,12 @@ export class Node {
         this.hasParent = hasParent;
     }
 
-    sumMetadatas() {
-        return this.metadatas.reduce(SUM, 0);
-    }
-
-    sumMetadatasRecursively() {
-        return this.sumMetadatas() + this.children.map(n => n.sumMetadatasRecursively()).reduce(SUM, 0);
+    sumMetadatas(recursive) {
+        if (!recursive) {
+            return this.metadatas.reduce(SUM, 0);
+        } else {
+            return this.sumMetadatas(false) + this.children.map(n => n.sumMetadatas(true)).reduce(SUM, 0);
+        }
     }
 
     toString() {
@@ -26,6 +26,10 @@ export class Node {
 
     isLeaf() {
         return this.children.length === 0;
+    }
+
+    static findRoot(nodes) {
+        return nodes.filter(n => !n.hasParent)[0];
     }
 }
 

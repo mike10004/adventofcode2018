@@ -1,6 +1,6 @@
 import {describe, it} from '../common/exams/lib/exams';
 import assert from 'assert';
-import { Parser } from './navtree';
+import { Node, Parser } from './navtree';
 
 describe("Parser", () => {
     it("consumeAll", () => {
@@ -16,9 +16,9 @@ describe("Parser", () => {
             metadataSum += node.sumMetadatas();
         });
         assert.equal(metadataSum, 138);
-        const root = nodes.filter(n => !n.hasParent)[0];
+        const root = Node.findRoot(nodes);
         assert.notEqual(typeof(root), 'undefined');
-        assert.equal(root.sumMetadatasRecursively(), 138);
+        assert.equal(root.sumMetadatas(true), 138);
     });
 });
 
