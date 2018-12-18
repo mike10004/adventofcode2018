@@ -97,4 +97,8 @@ export class Sequencer {
 
 }
 
-export default Sequencer;
+export const sleigh = {
+    Sequencer: Sequencer,
+    ArrayUtils: ArrayUtils,
+    Step: Step,
+};
