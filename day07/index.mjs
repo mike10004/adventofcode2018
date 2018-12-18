@@ -1,5 +1,5 @@
 import fs from 'fs';
-import {Sequencer, Step, Worker, Scheduler} from './sleigh';
+import {Sequencer, Step, Builder, Scheduler} from './sleigh';
 
 function main(args) {
     const pathname = args[0];
@@ -27,7 +27,7 @@ function main(args) {
     const numWorkers = 5;
     const workers = [];
     for (let i = 0; i < numWorkers; i++) {
-        workers.push(new Worker());
+        workers.push(new Builder());
     }
     const scheduler = new Scheduler(workers, floor);
     const seconds = scheduler.proceed(steps, null, 100000);

@@ -122,7 +122,7 @@ export class Task {
     }
 }
 
-export class Worker {
+export class Builder {
 
     constructor() {
         this.task = null;
@@ -151,7 +151,7 @@ export class Scheduler {
         this.sequencer = new Sequencer();
         this.second = -1;
         this.floor = floor || 0;
-        this.workers = workers || ([new Worker()]);
+        this.workers = workers || ([new Builder()]);
     }
 
     /**
@@ -192,8 +192,8 @@ export class Scheduler {
         while (completed.size < numSteps) {
             this.tick(steps, completed);
             listener(this, steps, completed);
-            if (maxTotalDuration && this.second > maxTotalDuration) {
-                console.warn("break early due to max duration hit", maxTotalDuration);
+            if (this.second > maxTotalDuration) {
+                console.warn("break early due to max duration elapsed", maxTotalDuration);
                 break;
             }
         }
@@ -205,8 +205,11 @@ export class Scheduler {
     }
 }
 
-export const sleigh = {
+export default {
     Sequencer: Sequencer,
     ArrayUtils: ArrayUtils,
     Step: Step,
+    Builder: Builder,
+    Scheduler: Scheduler,
+    Task: Task,
 };
