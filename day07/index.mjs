@@ -1,5 +1,5 @@
 import fs from 'fs';
-import {Sequencer, Step} from './sleigh';
+import {Sequencer, Step, Worker, Scheduler} from './sleigh';
 
 function main(args) {
     const pathname = args[0];
@@ -23,6 +23,15 @@ function main(args) {
     }
     process.stdout.write(sequence.join(''));
     process.stdout.write("\n");
+    const floor = 60;
+    const numWorkers = 5;
+    const workers = [];
+    for (let i = 0; i < numWorkers; i++) {
+        workers.push(new Worker());
+    }
+    const scheduler = new Scheduler(workers, floor);
+    const seconds = scheduler.proceed(steps, null, 100000);
+    process.stdout.write(seconds + " seconds to complete all tasks\n");
     return 0;
 }
 

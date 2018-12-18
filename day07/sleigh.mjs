@@ -197,6 +197,7 @@ export class Scheduler {
                 break;
             }
         }
+        return this.second;
     }
 
     state() {
