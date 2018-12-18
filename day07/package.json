@@ -1,0 +1,23 @@
+{
+  "name": "aoc2018day07",
+  "version": "1.0.0",
+  "description": "Advent of Code 2018 Day 7",
+  "main": "index.js",
+  "scripts": {
+    "test": "node --experimental-modules test_*.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mike10004/adventofcode2018.git"
+  },
+  "keywords": [
+    "adventofcode"
+  ],
+  "author": "Mike Chaberski",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mike10004/adventofcode2018/issues"
+  },
+  "homepage": "https://github.com/mike10004/adventofcode2018#readme",
+  "devDependencies": {}
+}
