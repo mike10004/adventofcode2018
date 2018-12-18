@@ -1,0 +1,12 @@
+{
+  "name": "exams",
+  "version": "1.0.0",
+  "description": "Unit testing library for ES6 modules",
+  "main": "lib/exams.js",
+  "scripts": {
+    "test": "cd test && ./run_demo.sh"
+  },
+  "keywords": [],
+  "author": "Mike Chaberski",
+  "license": "MIT"
+}
