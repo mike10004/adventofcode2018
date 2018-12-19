@@ -208,8 +208,13 @@ def main():
     parser.add_argument("-v", "--verbose", action='store_const', const='DEBUG', dest='log_level', help="set log level DEBUG")
     args = parser.parse_args()
     logging.basicConfig(level=logging.__dict__[args.log_level])
-    with open(sys.stdin, 'r') as ifile:
-        pass
+    nelves, last_marble = 435, 71184  # puzzle input
+    players = [Player(i + 1) for i in range(nelves)]    
+    game = Game()
+    high_scorer = game.play(players, last_marble)
+    high_score = high_scorer.score()
+    # _log.debug("%s elves up to marble %s: high score %s", nelves, last_marble_n, high_score)
+    print("{} elves, last marble is worth {} points: high score is {}".format(nelves, last_marble, high_score))
     return 0
 
 if __name__ == '__main__':
