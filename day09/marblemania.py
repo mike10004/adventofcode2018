@@ -206,9 +206,11 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-l", "--log-level", choices=('DEBUG', 'INFO', 'WARN', 'ERROR'), default='INFO', help="set log level")
     parser.add_argument("-v", "--verbose", action='store_const', const='DEBUG', dest='log_level', help="set log level DEBUG")
+    parser.add_argument("--marble-factor", type=int, default=1, help="last marble factor; use 100 for part 2")
     args = parser.parse_args()
     logging.basicConfig(level=logging.__dict__[args.log_level])
     nelves, last_marble = 435, 71184  # puzzle input
+    last_marble *= args.marble_factor
     players = [Player(i + 1) for i in range(nelves)]    
     game = Game()
     high_scorer = game.play(players, last_marble)
