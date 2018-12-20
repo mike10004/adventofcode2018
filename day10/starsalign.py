@@ -15,15 +15,11 @@ from collections import defaultdict
 _log = logging.getLogger(__name__)
 
 
-class Star(tuple):
+class Star(object):
 
-    position, velocity = [], tuple()
-
-    def __new__(cls, position, velocity):
-        me = super(Star, cls).__new__(cls, [position, velocity])
-        me.position = list(position)
-        me.velocity = velocity
-        return me
+    def __init__(self, position, velocity):
+        self.position = list(position)
+        self.velocity = tuple(velocity)
     
     @classmethod
     def parse(cls, text):
@@ -41,18 +37,19 @@ class Star(tuple):
         self.position[0] += self.velocity[0]
         self.position[1] += self.velocity[1]
         return self
+    
+    @classmethod
+    def tick_all(cls, stars):
+        for star in stars:
+            star.tick()
 
 
-class Processor(object):
+class Renderer(object):
 
     def __init__(self):
         pass
     
-    def tick(self, stars):
-        for star in stars:
-            star.tick()
-    
-    def render(self, stars, ofile=sys.stdout, width=80, height=None, shades=('.', '#')):
+    def print(self, stars, ofile=sys.stdout, width=80, height=40, shades=('.', '#')):
         if height is None:
             height = max([star.position.y for star in stars])
         dark, light = shades[0], shades[-1]
@@ -89,38 +86,44 @@ class Processor(object):
         image.save(output_pathname)        
         return image
 
-def _contains_line(stars, min_len, pos=0):
-    by_coord = defaultdict(int)
-    for star in stars:
-        by_coord[star.position[pos]] += 1
-    for length in by_coord.values():
-        if length >= min_len:
-            return True
-    return False
 
+class DrawPredicate(object):
 
-def _create_predicate(args):
-    def is_ok(stars, width, height):
-        if args.max_dim > 0:
-            if width > args.max_dim or height > args.max_dim:
+    def __init__(self, args):
+        self.args = args
+
+    def _contains_line(self, stars, pos=0):
+        assert self.args.min_line is not None
+        by_coord = defaultdict(int)
+        for star in stars:
+            by_coord[star.position[pos]] += 1
+        for length in by_coord.values():
+            if length >= self.args.min_line:
+                return True
+        return False
+    
+    def __call__(self, *params):
+        stars, width, height = params
+        if self.args.max_dim > 0:
+            if width > self.args.max_dim or height > self.args.max_dim:
                 return False
-        if args.min_line is not None:
-            return _contains_line(stars, args.min_line, 0) or _contains_line(stars, args.min_line, 1)
+        if self.args.min_line is not None:
+            return self._contains_line(stars, 0) or self._contains_line(stars, 1)
         return True
-    return is_ok
+
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-l", "--log-level", choices=('DEBUG', 'INFO', 'WARN', 'ERROR'), default='INFO', help="set log level")
     parser.add_argument("-v", "--verbose", action='store_const', const='DEBUG', dest='log_level', help="set log level DEBUG")
-    parser.add_argument("-t", "--truncate", type=int, help="truncate at column N", metavar='N', default=79)
+    parser.add_argument("--cols", "--columns", type=int, dest="columns", help="set fixed number of columns", metavar='N', default=79)
     parser.add_argument("--image", dest='mode', action='store_const', const='image')
     parser.add_argument("--image-prefix", default="/tmp/starsalign/image-")
     parser.add_argument("--image-suffix", default=".png")
     parser.add_argument("--simulate", action='store_true', help="in 'image' mode, do not write images, but describe them")
     parser.add_argument("--max-dim", type=int, default=50000, help="max pixels in either image dimension (otherwise skip)")
     parser.add_argument("--iterations", type=int, default=100, help="number of iterations in image mode")
-    parser.add_argument("--rows", type=int, help="set fixed number of rows", default=None)
+    parser.add_argument("--rows", type=int, help="set fixed number of rows", default=40)
     parser.add_argument("--min-line", type=int, help="set minimum line length predicate", default=None)
     parser.add_argument("input_file", help="input text file pathname", metavar='FILE')
     parser.add_argument("mode", choices=('text', 'image'))
@@ -129,25 +132,25 @@ def main():
     with open(args.input_file, 'r') as ifile:
         stars = Star.parse_many(ifile)
     intext = ''
-    processor = Processor()
+    renderer = Renderer()
     if args.mode == 'text':
         ofile = sys.stdout
         while not intext.strip():
-            processor.render(stars, ofile, width=args.truncate, height=args.rows)
+            renderer.print(stars, ofile, width=args.columns, height=args.rows)
             print(file=ofile)
             intext = input("Press enter to proceed ")
             print(file=ofile)
             _log.debug("input: %r", intext)
-            processor.tick(stars)
+            Star.tick_all(stars)
         print("done")
     elif args.mode == 'image':
         ncreated = 0
-        predicate = _create_predicate(args)
+        predicate = DrawPredicate(args)
         for i in range(args.iterations):
             pn = "{}{}{}".format(args.image_prefix, i, args.image_suffix)
-            image = processor.draw(stars, pn, predicate, args.simulate)
+            image = renderer.draw(stars, pn, predicate, args.simulate)
             ncreated += (1 if image else 0)
-            processor.tick(stars)
+            Star.tick_all(stars)
         _log.debug("%s of %s images created", ncreated, args.iterations)
         if args.simulate:
             print("{} images created".format(ncreated))
