@@ -53,14 +53,6 @@ export class Grid {
         return x >= this.coordMin && x <= this.coordMax && y >= this.coordMin && y <= this.coordMax;
     }
 
-    static getOffsetMin(squareSize) {
-        return -parseInt(squareSize / 2.0);
-    }
-
-    static getOffsetMax(squareSize) {
-        return parseInt(squareSize / 2.0) + (squareSize % 2 == 0 ? -1 : 0);
-    }
-
     /**
      * 
      * @param {number|Array} squareSizes the square sizes to examine
@@ -73,36 +65,21 @@ export class Grid {
         let cornerPosition = null, maxPower = null;
         squareSizes.forEach(squareSize => {
             console.debug("looking for max power with square size", squareSize);
-            const offsetMin = Grid.getOffsetMin(squareSize);
-            const offsetMax = Grid.getOffsetMax(squareSize);
-            const requiredNumCellsPerSquare = squareSize * squareSize;
-            for (let y = this.coordMin; y <= this.coordMax; y++) {
-                for (let x = this.coordMin; x <= this.coordMax; x++) {
+            for (let y = this.coordMin; y <= (this.coordMax - squareSize); y++) {
+                for (let x = this.coordMin; x <= (this.coordMax - squareSize); x++) {
                     const square = [];
                     let notFull = false;
-                    for (let i = offsetMin; !notFull && i <= offsetMax; i++) {
-                        for (let j = offsetMin; !notFull && j <= offsetMax; j++) {
+                    for (let i = 0; !notFull && i < squareSize; i++) {
+                        for (let j = 0; !notFull && j < squareSize; j++) {
                             const xx = x + j, yy = y + i;
-                            if (this.contains(xx, yy)) {
-                                square.push(new Position(xx, yy));
-                            } else {
-                                notFull = true;
-                            }
+                            square.push(new Position(xx, yy));
                         }
                     }
-                    if (notFull) {
-                        continue;
-                    }
-                    if (square.length > requiredNumCellsPerSquare) {
-                        throw new Error("bad square size: " + square.length);
-                    }
-                    if (square.length === requiredNumCellsPerSquare) {
-                        const powerSum = square.map(p => FuelCell.findPowerLevel(p.x, p.y, this.serialNumber)).reduce(SUM, 0);
-                        if (maxPower === null || powerSum > maxPower) {
-                            maxPower = powerSum;
-                            cornerPosition = square[0];
-                            cornerPosition.squareSize = squareSize;
-                        }
+                    const powerSum = square.map(p => FuelCell.findPowerLevel(p.x, p.y, this.serialNumber)).reduce(SUM, 0);
+                    if (maxPower === null || powerSum > maxPower) {
+                        maxPower = powerSum;
+                        cornerPosition = square[0];
+                        cornerPosition.squareSize = squareSize;
                     }
                 }
             }

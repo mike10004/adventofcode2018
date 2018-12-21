@@ -35,22 +35,6 @@ describe("FuelCell", () => {
 
 describe("Grid", () => {
 
-    [
-        {squareSize: 1, expectedMin: 0, expectedMax: 0},
-        {squareSize: 2, expectedMin: -1, expectedMax: 0},
-        {squareSize: 3, expectedMin: -1, expectedMax: 1},
-        {squareSize: 4, expectedMin: -2, expectedMax: 1},
-        {squareSize: 5, expectedMin: -2, expectedMax: 2},
-        {squareSize: 7, expectedMin: -3, expectedMax: 3},
-    ].forEach(testCase => {
-        it("getOffsetMin at size " + testCase.squareSize, () => {
-            assert.equal(Grid.getOffsetMin(testCase.squareSize), testCase.expectedMin);
-        });
-        it("getOffsetMax at size " + testCase.squareSize, () => {
-            assert.equal(Grid.getOffsetMax(testCase.squareSize), testCase.expectedMax);
-        });
-    });
-
     it("example 1", () => {
         const actual = new Grid(1, 300, 18).findMaxPower(3);
         assert.notEqual(actual, null);
