@@ -8,13 +8,14 @@ function main(args) {
         return 1;
     }
     const coordMin = 1, coordMax = 300;
-    const squareSizes = [];
-    for (let q = coordMin; q <= coordMax; q++) {
-        squareSizes.push(q);
-    }
-    const grid = new Grid(coordMin, coordMax, serialNumber);
+    const maxSquareSize = coordMax;
+    const grid = new Grid(coordMin, coordMax, serialNumber, true);
     console.debug("finding max power for grid " + grid.toString());
-    const corner = grid.findMaxPower(squareSizes);
+    const corner = grid.findMaxPower(maxSquareSize);
+    if (!corner) {
+        process.stderr.write("no max power found; 0 cells?\n");
+        return 1;
+    }
     process.stdout.write("max power is in cell with top-left corner " + corner + " with square size " + corner.squareSize + "\n");
     return 0;
 }

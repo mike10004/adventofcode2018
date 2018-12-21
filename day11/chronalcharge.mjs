@@ -37,12 +37,17 @@ export class FuelCell {
 
 }
 
+function toKey(x, y) {
+    return x + "," + y;
+}
+
 export class Grid {
     
-    constructor(coordMin, coordMax, serialNumber) {
+    constructor(coordMin, coordMax, serialNumber, verbose) {
         this.coordMin = coordMin;
         this.coordMax = coordMax;
         this.serialNumber = serialNumber;
+        this.verbose = verbose;
     }
 
     toString() {
@@ -53,37 +58,58 @@ export class Grid {
         return x >= this.coordMin && x <= this.coordMax && y >= this.coordMin && y <= this.coordMax;
     }
 
+    powerLevelAt(x, y) {
+        return FuelCell.findPowerLevel(x, y, this.serialNumber);
+    }
+
+    /**
+     * Compute the sum of power levels in a square.
+     * @param {number} x x-coordinate of the square
+     * @param {number} y y-coordinate of the square
+     * @param {number} squareSize square size
+     * @param {Map} previous a map of "x,y" to power sums at (squareSize - 1)
+     */
+    sumPowerLevels(x, y, squareSize, previous) {
+        const subSquareSum = previous.get(toKey(x, y));
+        if (typeof(subSquareSum) === 'undefined' && squareSize !== 1) {
+            throw new Error("previous power sum not already computed at squareSize = " + squareSize);
+        }
+        let borderSum = 0;
+        for (let i = 0; i < squareSize; i++) { // right border
+            borderSum += this.powerLevelAt(x + (squareSize - 1), y + i);
+        }
+        for (let i = 0; i < (squareSize - 1); i++) { // bottom border, except rightmost cell
+            borderSum += this.powerLevelAt(x + i, y + (squareSize - 1));
+        }
+        return (subSquareSum || 0) + borderSum;
+    }
+
     /**
      * 
-     * @param {number|Array} squareSizes the square sizes to examine
+     * @param {number} maxSquareSize the max square size to examine
      * @returns position of top-left square
      */
-    findMaxPower(squareSizes) {
-        if (typeof(squareSizes) === 'number') {
-            squareSizes = [squareSizes];
-        }
+    findMaxPower(maxSquareSize) {
         let cornerPosition = null, maxPower = null;
-        squareSizes.forEach(squareSize => {
-            console.debug("looking for max power with square size", squareSize);
+        let previous = new Map(); // map of position to square power sum at previous square size
+        for (let squareSize = 1; squareSize <= maxSquareSize; squareSize++) {
+            const current = new Map(); 
+            if (this.verbose) {
+                console.debug("looking for max power with square size", squareSize);
+            }
             for (let y = this.coordMin; y <= (this.coordMax - squareSize); y++) {
                 for (let x = this.coordMin; x <= (this.coordMax - squareSize); x++) {
-                    const square = [];
-                    let notFull = false;
-                    for (let i = 0; !notFull && i < squareSize; i++) {
-                        for (let j = 0; !notFull && j < squareSize; j++) {
-                            const xx = x + j, yy = y + i;
-                            square.push(new Position(xx, yy));
-                        }
-                    }
-                    const powerSum = square.map(p => FuelCell.findPowerLevel(p.x, p.y, this.serialNumber)).reduce(SUM, 0);
+                    const powerSum = this.sumPowerLevels(x, y, squareSize, previous);
+                    current.set(toKey(x, y), powerSum);
                     if (maxPower === null || powerSum > maxPower) {
                         maxPower = powerSum;
-                        cornerPosition = square[0];
+                        cornerPosition = new Position(x, y);
                         cornerPosition.squareSize = squareSize;
                     }
                 }
             }
-        });
+            previous = current;
+        };
         return cornerPosition;
     }
 

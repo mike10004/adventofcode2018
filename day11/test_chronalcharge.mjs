@@ -35,16 +35,38 @@ describe("FuelCell", () => {
 
 describe("Grid", () => {
 
+    it("trivial", () => {
+        const actual = new Grid(1, 300, 18).findMaxPower(1, 3);
+        assert.notEqual(actual, null);
+        console.debug("result", actual);
+    });
+
     it("example 1", () => {
         const actual = new Grid(1, 300, 18).findMaxPower(3);
         assert.notEqual(actual, null);
         assert.equal(actual.toString(), "33,45");
+        assert.equal(actual.squareSize, 3);
     });
 
     it("example 2", () => {
         const actual = new Grid(1, 300, 42).findMaxPower(3);
         assert.notEqual(actual, null);
         assert.equal(actual.toString(), "21,61");
+        assert.equal(actual.squareSize, 3);
+    });
+
+    it("example 3", () => {
+        const actual = new Grid(1, 300, 18).findMaxPower(24);
+        assert.notEqual(actual, null);
+        assert.equal(actual.toString(), "90,269");
+        assert.equal(actual.squareSize, 16);
+    });
+
+    it("example 4", () => {
+        const actual = new Grid(1, 300, 42).findMaxPower(20);
+        assert.notEqual(actual, null);
+        assert.equal(actual.toString(), "232,251");
+        assert.equal(actual.squareSize, 12);
     });
 
 });
