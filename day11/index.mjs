@@ -11,7 +11,7 @@ function main(args) {
     const grid = new Grid(coordMin, coordMax, serialNumber);
     console.debug("finding max power for grid " + grid.toString());
     const corner = grid.findMaxPower(squareSize);
-    process.stdout.write("max power is in cell with top-left corner " + corner + "\n");
+    process.stdout.write("max power is in cell with top-left corner " + corner + " with square size " + corner.squareSize + "\n");
     return 0;
 }
 

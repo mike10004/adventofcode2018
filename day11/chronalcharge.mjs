@@ -37,32 +37,6 @@ export class FuelCell {
 
 }
 
-class Cache {
-    
-    constructor(size, loader) {
-        this.size = size;
-        this.map = new Map();
-        this.loader = loader;
-    }
-
-    get(key) {
-        if (typeof(key) !== 'string') {
-            key = key.toString();
-        }
-        let value = this.map.get(key);
-        if (typeof(value) === 'undefined') {
-            while (this.map.size >= size) {
-                const oldestKey = this.map.keys().next();
-                this.map.delete(oldestKey);
-            }
-            value = this.loader(key);
-            this.map.put(key, value);
-        }
-        return value;
-    }
-
-}
-
 export class Grid {
     
     constructor(coordMin, coordMax, serialNumber) {
@@ -79,40 +53,53 @@ export class Grid {
         return x >= this.coordMin && x <= this.coordMax && y >= this.coordMin && y <= this.coordMax;
     }
 
+    static getOffsetMin(squareSize) {
+        return -parseInt(squareSize / 2.0);
+    }
+
+    static getOffsetMax(squareSize) {
+        return parseInt(squareSize / 2.0);
+    }
+
     /**
      * 
-     * @param {number} squareSize the square size
+     * @param {number|Array} squareSizes the square sizes to examine
      * @returns position of top-left square
      */
-    findMaxPower(squareSize) {
-        const cache = new Cache();
+    findMaxPower(squareSizes) {
+        if (typeof(squareSizes) === 'number') {
+            squareSizes = [squareSizes];
+        }
         let cornerPosition = null, maxPower = null;
-        const offsetMin = -parseInt(squareSize / 2.0);
-        const offsetMax = -offsetMin;
-        const requiredNumCellsPerSquare = squareSize * squareSize;
-        for (let y = this.coordMin; y <= this.coordMax; y++) {
-            for (let x = this.coordMin; x <= this.coordMax; x++) {
-                const square = [];
-                for (let i = offsetMin; i <= offsetMax; i++) {
-                    for (let j = offsetMin; j <= offsetMax; j++) {
-                        const xx = x + j, yy = y + i;
-                        if (this.contains(xx, yy)) {
-                            square.push(new Position(xx, yy));
+        squareSizes.forEach(squareSize => {
+            const offsetMin = Grid.getOffsetMin(squareSize);
+            const offsetMax = Grid.getOffsetMax(squareSize);
+            const requiredNumCellsPerSquare = squareSize * squareSize;
+            for (let y = this.coordMin; y <= this.coordMax; y++) {
+                for (let x = this.coordMin; x <= this.coordMax; x++) {
+                    const square = [];
+                    for (let i = offsetMin; i <= offsetMax; i++) {
+                        for (let j = offsetMin; j <= offsetMax; j++) {
+                            const xx = x + j, yy = y + i;
+                            if (this.contains(xx, yy)) {
+                                square.push(new Position(xx, yy));
+                            }
+                        }
+                    }
+                    if (square.length > requiredNumCellsPerSquare) {
+                        throw new Error("bad square size: " + square.length);
+                    }
+                    if (square.length === requiredNumCellsPerSquare) {
+                        const powerSum = square.map(p => FuelCell.findPowerLevel(p.x, p.y, this.serialNumber)).reduce(SUM, 0);
+                        if (maxPower === null || powerSum > maxPower) {
+                            maxPower = powerSum;
+                            cornerPosition = square[0];
+                            cornerPosition.squareSize = squareSize;
                         }
                     }
                 }
-                if (square.length > requiredNumCellsPerSquare) {
-                    throw new Error("bad square size: " + square.length);
-                }
-                if (square.length === requiredNumCellsPerSquare) {
-                    const powerSum = square.map(p => FuelCell.findPowerLevel(p.x, p.y, this.serialNumber)).reduce(SUM, 0);
-                    if (maxPower === null || powerSum > maxPower) {
-                        maxPower = powerSum;
-                        cornerPosition = square[0];
-                    }
-                }
             }
-        }
+        });
         return cornerPosition;
     }
 
