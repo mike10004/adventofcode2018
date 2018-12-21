@@ -3,6 +3,10 @@ import {AssertionError} from 'assert';
 const _PASS = 'pass';
 const _FAIL = 'fail';
 const _ERROR = 'error';
+const _IGNORED = 'ignored';
+
+const _ANNO_IGNORED = 'ignored';
+const _ANNO_FORCED = 'forced';
 
 class Result {
     
@@ -22,10 +26,15 @@ class Renderer {
 
     stringify(thing, hint) {
         if (thing) {
+            if (thing instanceof TestGroup) {
+                if (thing.isIgnored()) {
+                    return thing.description + " (ignored)";
+                } 
+            }
             if (thing instanceof Test || thing instanceof TestGroup) {
                 return thing.description;
             }
-            if (hint === 'outcome' && thing !== _PASS) {
+            if (hint === 'outcome' && thing !== _PASS && thing !== _IGNORED) {
                 return thing.toString().toUpperCase();
             }
             return thing.toString();
@@ -145,24 +154,30 @@ class Runner {
         const results = [];
         state.groups.forEach(group => {
             reporter.groupStarted(group);
-            group.tests.forEach(test => {
-                let outcome = _ERROR, extras = null;
-                try {
-                    reporter.testStarted(test);
-                    test.run();
-                    outcome = _PASS;
-                } catch (e) {
-                    extras = e;
-                    if (e instanceof AssertionError) {
-                        outcome = _FAIL;
+            if (!group.isIgnored()) {
+                group.tests.forEach(test => {
+                    let outcome = _ERROR, extras = null;
+                    if (!test.isIgnored()) {
+                        try {
+                            reporter.testStarted(test);
+                            test.run();
+                            outcome = _PASS;
+                        } catch (e) {
+                            extras = e;
+                            if (e instanceof AssertionError) {
+                                outcome = _FAIL;
+                            } else {
+                                outcome = _ERROR;
+                            }                    
+                        }
                     } else {
-                        outcome = _ERROR;
-                    }                    
-                }
-                const result = new Result(test, outcome, extras);
-                reporter.testFinished(result);
-                results.push(result);
-            });
+                        outcome = _IGNORED;
+                    }
+                    const result = new Result(test, outcome, extras);
+                    reporter.testFinished(result);
+                    results.push(result);
+                });
+            }
             reporter.groupFinished(group);
         });
         reporter.allTestsFinished(results);
@@ -209,37 +224,54 @@ function getState() {
 
 class TestGroup {
     
-    constructor(description) {
+    constructor(description, annotation) {
         this.description = description;
+        this.annotation = annotation;
         this.tests = [];
     }
 
+    _it(description, fn, annotation) {
+        return this.addTest(new Test(this, description, fn, annotation));
+    }
+
     it(description, fn) {
-        return this.addTest(new Test(this, description, fn));
+        return this._it(description, fn);
+    }
+
+    xit(description, fn) {
+        return this._it(description, fn, _ANNO_IGNORED);
     }
     
     addTest(test) {
         this.tests.push(test);
         return this;
     }
+
+    isIgnored() {
+        return this.annotation === _ANNO_IGNORED;
+    }
 }
 
 class Test {
 
-    constructor(group, description, fn) {
+    constructor(group, description, fn, annotation) {
         this.group = group;
         this.description = description;
         this.fn = fn;
+        this.annotation = annotation;
     }
 
     run() {
         return this.fn();
     }
 
+    isIgnored() {
+        return this.annotation === _ANNO_IGNORED;
+    }
 }
 
-export function describe(description, runNow) {
-    const group = new TestGroup(description);
+function _describe(description, runNow, annotation) {
+    const group = new TestGroup(description, annotation);
     const state = getState();
     state.addGroup(group);
     if (runNow) {
@@ -247,11 +279,23 @@ export function describe(description, runNow) {
         state.clearCurrentGroup();
     }
     return group;
+}
+
+export function describe(description, runNow) {
+    return _describe(description, runNow);
 };
+
+export function xdescribe(description, runNow) {
+    return _describe(description, runNow, _ANNO_IGNORED);
+}
 
 export function it(description, runnable) {
     getState().getCurrentGroup().it(description, runnable);
 };
+
+export function xit(description, runnable) {
+    getState().getCurrentGroup().xit(description, runnable, _ANNO_IGNORED);
+}
 
 export function execute() {
     const renderer = new Renderer(process.stdout);
