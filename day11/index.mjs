@@ -7,10 +7,14 @@ function main(args) {
         console.error("usage: grid serial number is required as argument");
         return 1;
     }
-    const coordMin = 1, coordMax = 300, squareSize = 3;
+    const coordMin = 1, coordMax = 300;
+    const squareSizes = [];
+    for (let q = coordMin; q <= coordMax; q++) {
+        squareSizes.push(q);
+    }
     const grid = new Grid(coordMin, coordMax, serialNumber);
     console.debug("finding max power for grid " + grid.toString());
-    const corner = grid.findMaxPower(squareSize);
+    const corner = grid.findMaxPower(squareSizes);
     process.stdout.write("max power is in cell with top-left corner " + corner + " with square size " + corner.squareSize + "\n");
     return 0;
 }
