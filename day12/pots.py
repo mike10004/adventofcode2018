@@ -159,17 +159,16 @@ class Processor(object):
         for rule in rules:
             if rule.index == 0:
                 assert rule.result == False
-        self.rules = frozenset(rules)
+        self.grow_rules = set()
+        for rule in rules:
+            if rule.result:
+                self.grow_rules.add(rule.index)
+        self.grow_rules = frozenset(self.grow_rules)
         self.rule_width = rule_width
     
     def apply_rules(self, state, position):
         index = state.calc_index(position, self.rule_width)
-        for rule in self.rules:
-            if rule.index == index:
-                _log.debug("at position %s applying rule %s", position, rule)
-                return rule.result
-        _log.debug("at position %s no rules apply", position)
-        return False
+        return index in self.grow_rules
     
     def process(self, state):
         assert isinstance(state, State)
@@ -184,8 +183,8 @@ class Processor(object):
             state.set_pot(key, updates[key])
 
 
-def print_state(generation, state, args, ofile=sys.stdout):
-    if args.very_verbose:
+def print_state(generation, state, args, always=False, ofile=sys.stdout):
+    if always or args.very_verbose:
         current = state.render(args.render_min, args.render_max)
         print("{0:2d}: {1:2d} {2}".format(generation, state.min_key, current), file=ofile)
         return current
@@ -203,13 +202,14 @@ def main():
     parser.add_argument("--render-max", default=None, type=int)
     parser.add_argument("--very-verbose", "--vv", action='store_true')
     parser.add_argument("--progress", type=int, metavar="N", help="report progress every N iterations")
+    parser.add_argument("--bookends", action='store_true')
     args = parser.parse_args()
     logging.basicConfig(level=logging.__dict__[args.log_level])
     _log.debug("reading from %s", args.input_file)
     with open(args.input_file, 'r') as ifile:
         state, rules = parse_state_and_rules(ifile)
     processor = Processor(rules, args.rule_width)
-    print_state(0, state, args)
+    print_state(0, state, args, always=args.bookends)
     states = None if args.ignore_cycles else set()
     if args.ignore_cycles:
         states = None
@@ -226,7 +226,8 @@ def main():
             print("{} iterations performed, {} plants".format(i, state.count()), file=sys.stderr)
         print_state(i, state, args)
     pot_number_sum = state.sum()
-    print("{} is the sum of the numbers of all pots that contain plants".format(pot_number_sum))
+    print_state(i, state, args, always=args.bookends)
+    print("{} is the sum of the numbers of all pots that contain plants (min={})".format(pot_number_sum, min(state.plants)))
     return 0
 
 if __name__ == '__main__':
