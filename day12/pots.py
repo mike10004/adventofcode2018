@@ -132,6 +132,12 @@ class State(object):
         for key in self.plants:
             pot_number_sum += key
         return pot_number_sum
+    
+    def capture(self):
+        return frozenset(self.plants)
+    
+    def count(self):
+        return len(self.plants)
 
 
 def parse_state_and_rules(ifile=sys.stdin):
@@ -191,10 +197,12 @@ def main():
     parser.add_argument("-l", "--log-level", choices=('DEBUG', 'INFO', 'WARN', 'ERROR'), default='INFO', metavar="LEVEL", help="set log level")
     parser.add_argument("-v", "--verbose", action='store_const', const='DEBUG', dest='log_level', help="set log level DEBUG")
     parser.add_argument("--rule-width", type=int, default=5, metavar="N", help="set rule width")
-    parser.add_argument("--generations", type=int, metavar="N", default=20)
+    parser.add_argument("--generations", type=int, metavar="N", default=20, help="max number of generations to iterate")
+    parser.add_argument("--ignore-cycles", action='store_true', help="keep iterating even if a cycle is encountered")
     parser.add_argument("--render-min", default=None, type=int)
     parser.add_argument("--render-max", default=None, type=int)
     parser.add_argument("--very-verbose", "--vv", action='store_true')
+    parser.add_argument("--progress", type=int, metavar="N", help="report progress every N iterations")
     args = parser.parse_args()
     logging.basicConfig(level=logging.__dict__[args.log_level])
     _log.debug("reading from %s", args.input_file)
@@ -202,8 +210,20 @@ def main():
         state, rules = parse_state_and_rules(ifile)
     processor = Processor(rules, args.rule_width)
     print_state(0, state, args)
+    states = None if args.ignore_cycles else set()
+    if args.ignore_cycles:
+        states = None
+    else:
+        states = set()
     for i in range(1, args.generations + 1):
+        captured = state.capture()
+        if not args.ignore_cycles and captured in states:
+            print("cycle encountered at iteration", i)
+            break
+        states.add(captured)
         processor.process(state)
+        if args.progress and (i % args.progress == 0):
+            print("{} iterations performed, {} plants".format(i, state.count()), file=sys.stderr)
         print_state(i, state, args)
     pot_number_sum = state.sum()
     print("{} is the sum of the numbers of all pots that contain plants".format(pot_number_sum))
