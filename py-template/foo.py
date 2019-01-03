@@ -35,7 +35,7 @@ def main():
     parser.add_argument("-v", "--verbose", action='store_const', const='DEBUG', dest='log_level', help="set log level DEBUG")
     args = parser.parse_args()
     logging.basicConfig(level=logging.__dict__[args.log_level])
-    with open(sys.stdin, 'r') as ifile:
+    with open("/dev/stdin", 'r') as ifile:
         pass
     return 0
 
