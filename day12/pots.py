@@ -111,6 +111,7 @@ class State(object):
         else:
             self.min_key = min(self.plants)
             self.max_key = max(self.plants)
+        self.min_key = min(self.min_key, 0)
     
     def set_pot(self, key, value):
         if value:
@@ -180,7 +181,7 @@ class Processor(object):
 def print_state(generation, state, args, ofile=sys.stdout):
     if args.very_verbose:
         current = state.render(args.render_min, args.render_max)
-        print("{0:2d}: {1}".format(generation, current), file=ofile)
+        print("{0:2d}: {1:2d} {2}".format(generation, state.min_key, current), file=ofile)
         return current
 
 
