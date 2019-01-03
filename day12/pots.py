@@ -76,7 +76,7 @@ def bit_generator(yielder, key_min, key_max_exclusive):
 class State(object):
 
     def __init__(self, pots):
-        self.pots = pots
+        self.plants = set([k for k in pots.keys() if pots[k]])
         keys = pots.keys()
         self.min_key = min(keys)
         self.max_key = max(keys)
@@ -100,17 +100,24 @@ class State(object):
         return State(pots)
     
     def is_full(self, pot_key):
-        try:
-            return self.pots[pot_key]
-        except KeyError:
-            return False
+        return pot_key in self.plants
+    
+    def _update_bounds(self, key, value):
+        if value:
+            if key < self.min_key:
+                self.min_key = key
+            if key > self.max_key:
+                self.max_key = key
+        else:
+            self.min_key = min(self.plants)
+            self.max_key = max(self.plants)
     
     def set_pot(self, key, value):
-        self.pots[key] = value
-        if value and key < self.min_key:
-            self.min_key = key
-        if value and key > self.max_key:
-            self.max_key = key
+        if value:
+            self.plants.add(key)
+        else:
+            self.plants.discard(key)
+        self._update_bounds(key, value)
     
     def calc_index(self, pot_key, rule_width):
         key_min = pot_key - int(rule_width / 2)
@@ -118,6 +125,12 @@ class State(object):
         nbits = key_max_exclusive - key_min
         bits = bit_generator(lambda i: self.is_full(i), key_min, key_max_exclusive)
         return BASE_TWO.bigendian(bits, nbits)
+    
+    def sum(self):
+        pot_number_sum = 0
+        for key in self.plants:
+            pot_number_sum += key
+        return pot_number_sum
 
 
 def parse_state_and_rules(ifile=sys.stdin):
@@ -152,7 +165,7 @@ class Processor(object):
         return False
     
     def process(self, state):
-        assert isinstance(state, State) and state.pots, "state must be nonempty"
+        assert isinstance(state, State)
         min_key = state.min_key - int(self.rule_width / 2)
         max_key = state.max_key + int(self.rule_width / 2) + 1
         updates = {}
@@ -165,9 +178,10 @@ class Processor(object):
 
 
 def print_state(generation, state, args, ofile=sys.stdout):
-    current = state.render(args.render_min, args.render_max)
-    print("{0:2d}: {1}".format(generation, current), file=ofile)
-    return current
+    if args.very_verbose:
+        current = state.render(args.render_min, args.render_max)
+        print("{0:2d}: {1}".format(generation, current), file=ofile)
+        return current
 
 
 def main():
@@ -179,6 +193,7 @@ def main():
     parser.add_argument("--generations", type=int, metavar="N", default=20)
     parser.add_argument("--render-min", default=None, type=int)
     parser.add_argument("--render-max", default=None, type=int)
+    parser.add_argument("--very-verbose", "--vv", action='store_true')
     args = parser.parse_args()
     logging.basicConfig(level=logging.__dict__[args.log_level])
     _log.debug("reading from %s", args.input_file)
@@ -189,10 +204,7 @@ def main():
     for i in range(1, args.generations + 1):
         processor.process(state)
         print_state(i, state, args)
-    pot_number_sum = 0
-    for key in state.pots:
-        if state.is_full(key):
-            pot_number_sum += key
+    pot_number_sum = state.sum()
     print("{} is the sum of the numbers of all pots that contain plants".format(pot_number_sum))
     return 0
 
