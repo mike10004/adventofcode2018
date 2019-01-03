@@ -5,7 +5,7 @@ import io
 import sys
 import logging
 import unittest
-from pots import Rule, State, Processor
+from pots import Base, Rule, State, Processor
 
 _log = logging.getLogger(__name__)
 _logging_configured = False
@@ -139,3 +139,33 @@ class TestProcessor(unittest.TestCase):
                 actual = state.render(from_key, to_key)
                 self.assertEqual(rendering, actual, "after {} generations".format(generations))
         
+
+def sequence_to_generator(seq):
+    for element in seq:
+        yield element
+
+
+class TestBase(unittest.TestCase):
+
+    def test_bigendian(self):
+        base_two = Base(2)
+        test_cases = [
+            (0, tuple()),
+            (0, (False,)),
+            (0, (False, False, False,)),
+            (1, (True,)),
+            (1, (False, True,)),
+            (2, (True, False,)),
+            (3, (True, True,)),
+            (4, (True, False, False)),
+            (4, (False, True, False, False)),
+            (4, (False, False, True, False, False)),
+            (5, (False, False, True, False, True)),
+        ]
+        for expected, bits in test_cases:
+            nbits = len(bits)
+            with self.subTest():
+                self.assertEqual(expected, base_two.bigendian(bits), "expect {} == {}".format(bits, expected))
+            with self.subTest():
+                bits = sequence_to_generator(bits)
+                self.assertEqual(expected, base_two.bigendian(bits, nbits), "(generator) expect {} == {}".format(bits, expected))

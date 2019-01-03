@@ -6,7 +6,7 @@ import io
 import sys
 import logging
 import argparse
-
+import collections.abc
 
 _log = logging.getLogger(__name__)
 _FULL = '#'
@@ -15,6 +15,28 @@ _EMPTY = '.'
 def _render_pots(pots):
     assert isinstance(pots, list) or isinstance(pots, tuple)
     return ''.join([_FULL if pot else _EMPTY for pot in pots])
+
+
+class Base(object):
+
+    def __init__(self, n):
+        self.n = n
+    
+    def bigendian(self, bits, nbits=None):
+        value = 0
+        if nbits is None:
+            assert isinstance(bits, collections.abc.Sized), "if nbits is not specified, bit sequence must be a Sized collection"
+            nbits = len(bits)
+        i = 0
+        for bit in bits:
+            if bit:
+                value += (self.n ** (nbits - i - 1))
+            i += 1
+        return value
+
+
+BASE_TWO = Base(2)
+
 
 class Rule(tuple):
 
@@ -39,12 +61,16 @@ class Rule(tuple):
         if m is None:
             raise ValueError("line does not match pattern: {}".format(line))
         index_str, result_str = m.group(1), m.group(2)
-        binary = ''.join(['1' if ch == _FULL else '0' for ch in index_str])
-        return Rule(int(binary, base=2), result_str == _FULL)
+        bits = [ch == _FULL for ch in index_str]
+        return Rule(BASE_TWO.bigendian(bits), result_str == _FULL)
     
     def __str__(self):
         return self.rendering
 
+
+def bit_generator(yielder, key_min, key_max_exclusive):
+    for i in range(key_min, key_max_exclusive):
+        yield yielder(i)
 
 
 class State(object):
@@ -88,11 +114,10 @@ class State(object):
     
     def calc_index(self, pot_key, rule_width):
         key_min = pot_key - int(rule_width / 2)
-        digits = []
-        for i in range(key_min, key_min + rule_width):
-            digits.append(self.is_full(i))
-        bin_str = ''.join(['1' if digit else '0' for digit in digits])
-        return int(bin_str, base=2)
+        key_max_exclusive = key_min + rule_width
+        nbits = key_max_exclusive - key_min
+        bits = bit_generator(lambda i: self.is_full(i), key_min, key_max_exclusive)
+        return BASE_TWO.bigendian(bits, nbits)
 
 
 def parse_state_and_rules(ifile=sys.stdin):
@@ -118,7 +143,6 @@ class Processor(object):
         self.rule_width = rule_width
     
     def apply_rules(self, state, position):
-        # _log.debug("applying %s rules of width %s", len(self.rules), self.rule_width)
         index = state.calc_index(position, self.rule_width)
         for rule in self.rules:
             if rule.index == index:
