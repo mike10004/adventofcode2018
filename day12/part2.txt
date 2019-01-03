@@ -1,0 +1,12 @@
+After 91 iterations, a pattern appears where the set of plants shifts right
+one pot for each subsequent iteration. This causes the sum of the numbers of
+all pots containing plants to increase by 72 on each iteration, so we can 
+define a formula for the sum S after N iterations as:
+
+    S(N) = 8574 + 72 * (N - 91)
+
+and calculate
+
+    S(50000000000) = 3600000002022
+
+which is the sum after 50 billion iterations.
