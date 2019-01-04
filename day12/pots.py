@@ -112,7 +112,6 @@ class State(object):
         else:
             self.min_key = min(self.plants)
             self.max_key = max(self.plants)
-        self.min_key = min(self.min_key, 0)
     
     def set_pot(self, key, value):
         if value:
@@ -187,7 +186,7 @@ class Processor(object):
 def print_state(generation, state, args, always=False, ofile=sys.stdout):
     if always or args.very_verbose:
         current = state.render(args.render_min, args.render_max)
-        print("{0:2d}: {1:2d} {2}".format(generation, state.min_key, current), file=ofile)
+        print("{0:2d}: [{1:2d}] {2}".format(generation, state.min_key, current), file=ofile)
         return current
 
 
@@ -202,22 +201,21 @@ def main():
     parser.add_argument("--render-max", default=None, type=int)
     parser.add_argument("--very-verbose", "--vv", action='store_true')
     parser.add_argument("--progress", type=int, metavar="N", help="report progress every N iterations")
-    parser.add_argument("--bookends", action='store_true')
+    parser.add_argument("--final", action='store_true', help="print final state")
     args = parser.parse_args()
     logging.basicConfig(level=logging.__dict__[args.log_level])
     _log.debug("reading from %s", args.input_file)
     with open(args.input_file, 'r') as ifile:
         state, rules = parse_state_and_rules(ifile)
     processor = Processor(rules, args.rule_width)
-    print_state(0, state, args, always=args.bookends)
-    for i in range(1, args.generations + 1):
-        processor.process(state)
-        if args.progress and (i % args.progress == 0):
-            print("{} iterations performed, {} plants".format(i, state.count()), file=sys.stderr)
+    for i in range(args.generations):
         print_state(i, state, args)
+        processor.process(state)
+        if args.progress and ((i + 1) % args.progress == 0):
+            print("{} iterations performed, {} plants".format(i + 1, state.count()), file=sys.stderr)
     pot_number_sum = state.sum()
-    print_state(i, state, args, always=args.bookends)
-    print("{} is the sum of the numbers of all pots that contain plants (min={})".format(pot_number_sum, min(state.plants)))
+    print_state(i + 1, state, args, always=args.final)
+    print("{} is the sum of the numbers of all pots ({}) that contain plants (min={})".format(pot_number_sum, state.count(), min(state.plants)))
     return 0
 
 if __name__ == '__main__':
