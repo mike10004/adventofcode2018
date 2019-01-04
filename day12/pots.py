@@ -12,6 +12,7 @@ _log = logging.getLogger(__name__)
 _FULL = '#'
 _EMPTY = '.'
 
+
 def _render_pots(pots):
     assert isinstance(pots, list) or isinstance(pots, tuple)
     return ''.join([_FULL if pot else _EMPTY for pot in pots])
@@ -197,7 +198,6 @@ def main():
     parser.add_argument("-v", "--verbose", action='store_const', const='DEBUG', dest='log_level', help="set log level DEBUG")
     parser.add_argument("--rule-width", type=int, default=5, metavar="N", help="set rule width")
     parser.add_argument("--generations", type=int, metavar="N", default=20, help="max number of generations to iterate")
-    parser.add_argument("--ignore-cycles", action='store_true', help="keep iterating even if a cycle is encountered")
     parser.add_argument("--render-min", default=None, type=int)
     parser.add_argument("--render-max", default=None, type=int)
     parser.add_argument("--very-verbose", "--vv", action='store_true')
@@ -210,17 +210,7 @@ def main():
         state, rules = parse_state_and_rules(ifile)
     processor = Processor(rules, args.rule_width)
     print_state(0, state, args, always=args.bookends)
-    states = None if args.ignore_cycles else set()
-    if args.ignore_cycles:
-        states = None
-    else:
-        states = set()
     for i in range(1, args.generations + 1):
-        captured = state.capture()
-        if not args.ignore_cycles and captured in states:
-            print("cycle encountered at iteration", i)
-            break
-        states.add(captured)
         processor.process(state)
         if args.progress and (i % args.progress == 0):
             print("{} iterations performed, {} plants".format(i, state.count()), file=sys.stderr)
