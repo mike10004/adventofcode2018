@@ -8,7 +8,7 @@ import sys
 import os
 import logging
 import argparse
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Callable
 from collections import defaultdict
 
 _log = logging.getLogger(__name__)
@@ -22,6 +22,39 @@ class Cart:
         self.dead = False
 
 
+def cart_char_to_direction(char):
+    return {
+        "<": -1,
+        "v": +1j,
+        ">": +1,
+        "^": -1j,
+    }[char]
+
+def direction_to_cart_char(direction):
+    return {
+        -1 : "<",
+        +1j: "v",
+        +1 : ">",
+        -1j: "^",
+    }[direction]
+
+
+def render(tracks, carts, x_range, y_range, ofile=sys.stdout):
+    carts_by_pos = {}
+    for cart in carts:
+        carts_by_pos[cart.position] = direction_to_cart_char(cart.direction)
+    for y in y_range:
+        for x in x_range:
+            position = x + y * 1j
+            if position in carts_by_pos:
+                print(carts_by_pos[position], end="", file=ofile)
+            elif position in tracks:
+                print(tracks[position], end="", file=ofile)
+            else:
+                print(" ", end="", file=ofile)
+        print(file=ofile)
+
+
 def setup(input_file_lines: List[str]) -> Tuple[Dict[complex, str], List[Cart]]:
     tracks = defaultdict(lambda: "")  # only stores important tracks: \ / +
     carts = []
@@ -30,12 +63,7 @@ def setup(input_file_lines: List[str]) -> Tuple[Dict[complex, str], List[Cart]]:
             if char == "\n":
                 continue
             if char in "<v>^":
-                direction = {
-                    "<": -1,
-                    "v": +1j,
-                    ">": +1,
-                    "^": -1j,
-                }[char]
+                direction = cart_char_to_direction(char)
                 carts.append(Cart(x + y * 1j, direction))  # location, direction, crossings
                 part = {
                     "<": "-",
@@ -45,7 +73,9 @@ def setup(input_file_lines: List[str]) -> Tuple[Dict[complex, str], List[Cart]]:
                 }[char]
             else:
                 part = char
-            if part in "\\/+":
+            # if part in "\\/+":
+            #     tracks[(x + y * 1j)] = part
+            if part:
                 tracks[(x + y * 1j)] = part
     return tracks, carts
 
@@ -54,7 +84,7 @@ def turn_cart(cart: Cart, part: str):
     """This space uses a downwards-facing Y axis, which means all calculations
     must flip their imaginary part. For example, rotation to the left
     (counterclockwise) would be multiplying by -1j instead of by +1j."""
-    if not part:  # empty track is impossible, and | or - don't matter
+    if not part or part in "|-":  # empty track is impossible, and | or - don't matter
         return
     if part == "\\":
         if cart.direction.real == 0:
@@ -71,9 +101,12 @@ def turn_cart(cart: Cart, part: str):
         cart.cross_mod = (cart.cross_mod + 1) % 3
 
 
-def solve_a(input_file_lines: List[str]) -> str:
-    tracks, carts = setup(input_file_lines)
+def find_first_crash_position(tracks: Dict[complex, str], carts: List[Cart], tick_callback: Callable=None) -> Tuple[int, int]:
+    nticks = 0
     while True:
+        if tick_callback:
+            tick_callback(tracks, carts, nticks)
+        nticks += 1
         carts.sort(key=lambda c: (c.position.imag, c.position.real))
         for ci, cart in enumerate(carts):
             cart.position += cart.direction
@@ -83,9 +116,13 @@ def solve_a(input_file_lines: List[str]) -> str:
             turn_cart(cart, part)
 
 
-def solve_b(input_file_lines: List[str]) -> str:
-    tracks, carts = setup(input_file_lines)
+def find_last_cart_position(tracks: Dict[complex, str], carts: List[Cart], max_ticks=None) -> Tuple[int, int]:
+    assert len(carts) % 2 == 1, "number of carts must be odd"
+    nticks = 0
     while len(carts) > 1:
+        if max_ticks is not None and nticks > max_ticks:
+            raise Exception("breached max ticks threshold")
+        nticks += 1
         carts.sort(key=lambda c: (c.position.imag, c.position.real))
         for ci, cart in enumerate(carts):
             if cart.dead:
@@ -116,6 +153,12 @@ def main():
     logging.basicConfig(level=logging.__dict__[args.log_level])
     with open(args.input_file, 'r') as ifile:
         lines = [line for line in ifile]
+    tracks, carts = setup(lines)
+    crash_position = find_first_crash_position(tracks, carts)
+    print("first crash occurs at {}".format(crash_position))
+    tracks, carts = setup(lines)
+    last_cart_position = find_last_cart_position(tracks, carts)
+    print("last cart's position is {}".format(last_cart_position))
     return 0
 
 if __name__ == '__main__':
