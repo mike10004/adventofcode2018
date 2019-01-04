@@ -1,0 +1,12 @@
+{
+	"folders": [
+		{
+			"path": "day12"
+		}
+	],
+	"settings": {
+		"python.pythonPath": "/usr/bin/python3",
+		"python.linting.enabled": true,
+		"python.unitTest.unittestEnabled": true,
+	}
+}
