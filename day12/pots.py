@@ -4,6 +4,7 @@ import os
 import re
 import io
 import sys
+import math
 import logging
 import argparse
 import collections.abc
@@ -67,6 +68,11 @@ class Rule(tuple):
     
     def __str__(self):
         return self.rendering
+    
+    @classmethod
+    def find_max_width(cls, rules):
+        max_index = max([rule.index for rule in rules])
+        return int(math.log2(max_index)) + 1
 
 
 def bit_generator(yielder, key_min, key_max_exclusive):
@@ -155,12 +161,14 @@ def parse_state_and_rules(ifile=sys.stdin):
 
 class Processor(object):
 
-    def __init__(self, rules, rule_width):
-        for rule in rules:
-            if rule.index == 0:
-                assert rule.result == False
+    def __init__(self, rules, rule_width=None):
+        if rule_width is None:
+            rule_width = Rule.find_max_width(rules)
+        assert rule_width > 0, "rule width must be positive integer"
         self.grow_rules = set()
         for rule in rules:
+            if rule.index == 0:
+                assert rule.result == False, "sequence of empty pots must not produce a plant"
             if rule.result:
                 self.grow_rules.add(rule.index)
         self.grow_rules = frozenset(self.grow_rules)
@@ -195,7 +203,7 @@ def main():
     parser.add_argument("input_file", default="/dev/stdin", help="input file", metavar="FILE")
     parser.add_argument("-l", "--log-level", choices=('DEBUG', 'INFO', 'WARN', 'ERROR'), default='INFO', metavar="LEVEL", help="set log level")
     parser.add_argument("-v", "--verbose", action='store_const', const='DEBUG', dest='log_level', help="set log level DEBUG")
-    parser.add_argument("--rule-width", type=int, default=5, metavar="N", help="set rule width")
+    parser.add_argument("--rule-width", type=int, metavar="N", help="set rule width")
     parser.add_argument("--generations", type=int, metavar="N", default=20, help="max number of generations to iterate")
     parser.add_argument("--render-min", default=None, type=int)
     parser.add_argument("--render-max", default=None, type=int)

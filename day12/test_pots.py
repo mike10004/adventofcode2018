@@ -63,6 +63,11 @@ class TestRule(unittest.TestCase):
                 rule = Rule(index, result)
                 actual = rule.render()
                 self.assertEqual(expected, actual)
+    
+    def test_find_max_width(self):
+        rules = [Rule.parse(rule_str) for rule_str, index, result in _RULE_INPUT_TEST_CASES]
+        max_width = Rule.find_max_width(rules)
+        self.assertEqual(5, max_width)
 
 
 class TestState(unittest.TestCase):
