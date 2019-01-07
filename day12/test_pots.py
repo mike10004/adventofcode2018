@@ -152,12 +152,24 @@ def sequence_to_generator(seq):
 
 class TestBase(unittest.TestCase):
 
-    def test_bigendian(self):
-        base_two = Base(2)
-        test_cases = [
+    def do_test_bigendian(self, n, test_cases):
+        std_cases = [
             (0, tuple()),
             (0, (False,)),
             (0, (False, False, False,)),
+        ]
+        base = Base(n)
+        for expected, bits in test_cases:
+            original = list(bits)
+            nbits = len(bits)
+            with self.subTest():
+                self.assertEqual(expected, base.bigendian(bits), "expect {} == {}".format(bits, expected))
+            with self.subTest():
+                bits = sequence_to_generator(bits)
+                self.assertEqual(expected, base.bigendian(bits, nbits), "(generator) expect {} == {}".format(original, expected))
+
+    def test_base2_bigendian(self):
+        test_cases = [
             (1, (True,)),
             (1, (False, True,)),
             (2, (True, False,)),
@@ -167,10 +179,38 @@ class TestBase(unittest.TestCase):
             (4, (False, False, True, False, False)),
             (5, (False, False, True, False, True)),
         ]
-        for expected, bits in test_cases:
-            nbits = len(bits)
-            with self.subTest():
-                self.assertEqual(expected, base_two.bigendian(bits), "expect {} == {}".format(bits, expected))
-            with self.subTest():
-                bits = sequence_to_generator(bits)
-                self.assertEqual(expected, base_two.bigendian(bits, nbits), "(generator) expect {} == {}".format(bits, expected))
+        self.do_test_bigendian(2, test_cases)
+    
+    def test_base10_bigendian(self):
+        test_cases = [
+            (1, (1,)),
+            (1, (0, 1,)),
+            (1, (0, 0, 1,)),
+            (3, (3,)),
+            (12, (1, 2)),
+            (12, (0, 1, 2)),
+            (543, (5, 4, 3)),
+            (1400, (1, 4, 0, 0)),
+        ]
+        self.do_test_bigendian(10, test_cases)
+    
+    def test_base16_bigendian(self):
+        test_cases = [
+            (1, (1,)),
+            (1, (0, 1)),
+            (4, (0, 4)),
+            (10, (10,)),
+            (15, (15,)),
+            (15, (0, 15,)),
+            (16, (1, 0)),
+            (17, (1, 1)),
+            (3 * 256 + 2 * 16 + 1 * 1, (3, 2, 1)),
+        ]
+        self.do_test_bigendian(16, test_cases)
+    
+    def test_base2_outofrange(self):
+        try:
+            Base(2).bigendian((2, 1, 0))
+            self.fail("should have thrown exception")
+        except ValueError:
+            pass

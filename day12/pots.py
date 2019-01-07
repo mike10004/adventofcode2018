@@ -21,9 +21,20 @@ def _render_pots(pots):
 
 class Base(object):
 
-    def __init__(self, n):
+    def __init__(self, n, digifier=None):
         self.n = n
+        self.digifier = digifier
+        self.lenient = False
     
+    def digify(self, symbol):
+        if self.digifier:
+            val = self.digifier(symbol)
+        else:
+            val = int(symbol)
+        if not self.lenient and val >= self.n:
+            raise ValueError("symbol is out of range for base {}".format(self.n))
+        return val
+
     def bigendian(self, bits, nbits=None):
         value = 0
         if nbits is None:
@@ -32,7 +43,8 @@ class Base(object):
         i = 0
         for bit in bits:
             if bit:
-                value += (self.n ** (nbits - i - 1))
+                val = self.digify(bit)
+                value += (val * (self.n ** (nbits - i - 1)))
             i += 1
         return value
 
