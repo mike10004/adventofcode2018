@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { Numbers, Elf, Scoreboard, RecipeMachine } from '../main/chocolate';
+import { Numbers, Elf, Scoreboard, RecipeMachine, Arrays } from '../main/chocolate';
 
 describe('Numbers', () => {
 
@@ -45,5 +45,29 @@ describe('RecipeMachine', () => {
             expect(actual).to.equal(testCase.expected);
         });
     })
+
+});
+
+describe.only('Arrays', () => {
+
+    [
+        {haystack: [], needle: [], start: 0, expected: 0},
+        {haystack: [], needle: [1], start: 0, expected: -1},
+        {haystack: [], needle: [1, 2], start: 0, expected: -1},
+        {haystack: [1, 2, 3], needle: [], start: 0, expected: 0},
+        {haystack: [1, 2, 3], needle: [1], start: 0, expected: 0},
+        {haystack: [1, 2, 3], needle: [2], start: 0, expected: 1},
+        {haystack: [1, 2, 3], needle: [1], start: 1, expected: -1},
+        {haystack: [1, 2, 3], needle: [1, 2], start: 0, expected: 0},
+        {haystack: [1, 2, 3], needle: [2, 3], start: 0, expected: 1},
+        {haystack: [1, 2, 3, 0, 1, 2, 3, 4], needle: [2, 3], start: 0, expected: 1},
+        {haystack: [1, 2, 3, 0, 1, 2, 3, 4], needle: [2, 3], start: 2, expected: 5},
+    ].forEach(testCase => {
+        it('findSequence ' + JSON.stringify(testCase), () => {
+            const actual = Arrays.findSequence(testCase.haystack, testCase.needle, testCase.start);
+            expect(actual).to.equal(testCase.expected);
+        });
+    });
+
 
 });

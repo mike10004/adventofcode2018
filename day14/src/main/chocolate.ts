@@ -79,6 +79,28 @@ export class Numbers {
 
 }
 
+export class Arrays {
+    
+    static findSequence(cells : Array<any>, sequence : Array<any>, start : number) : number {
+        // if (sequence.length === 0) {
+        //     return 0;
+        // }
+        for (let i = start; i <= cells.length - sequence.length; i++) {
+            let j = 0;
+            for (; j < sequence.length; j++) {
+                if (cells[i + j] !== sequence[j]) {
+                    break;
+                }
+            }
+            if (j === sequence.length) {
+                return i;
+            }
+        }
+        return -1;
+    }
+        
+}
+
 export class RecipeMachine {
 
     constructor(public scoreboard : Scoreboard) {

@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "mocha --require ts-node/register src/test/**/*.ts",
-    "program": "ts-node src/main/index.ts"
+    "part1": "ts-node src/main/index.ts",
+    "part2": "ts-node src/main/part2.ts"
   },
   "author": "Mike Chaberski",
   "license": "MIT",
